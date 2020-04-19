@@ -28,9 +28,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.22.1</version>
 				<configuration>
-					<systemPropertyVariables>
-						<propertyName>${channelName}</propertyName>
-					</systemPropertyVariables>
 					<suiteXmlFiles>
 						<!-- <suiteXmlFile>${executionxml}.xml</suiteXmlFile> -->
 						<suiteXmlFile>testNgTestRunner.xml</suiteXmlFile>

@@ -4,9 +4,11 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
@@ -24,11 +26,11 @@ import net.minidev.json.JSONArray;
 public class getRequest {
 
 	
-	public static String UserToken = "xoxp-1054713556071-1082072627489-1069512983842-ca8129e791c3f3904b2d6612f49253ed";
+	public static String UserToken = "";
 	public static String pretty = "1";
 //	public static String channelName = "nice20";
 //	public static String channelNewName = "nice20rename";
-	public static String channelName = System.getProperty("channelName");
+	public static String channelName = "";
 	public static String channelNewName = channelName + "new";
 	public static String baseurl = "https://slack.com";
 	public static String RequestURL = "";
@@ -62,7 +64,18 @@ public class getRequest {
 	@Given("api URL {string}, ChannelNameRequired {string}, NewChannelNameRequired {string}, ChannelIDRequired {string}")
 	public void api_URL_ChannelNameRequired_NewChannelNameRequired_ChannelIDRequired(String URL,
 			String ChannelNameRequired, String NewChannelNameRequired, String ChannelIDRequired) {
-
+		
+		FileReader reader = null;
+		try {
+		reader = new FileReader("base.properties");
+		Properties p=new Properties();  
+	    p.load(reader);
+	    UserToken = p.getProperty("UserToken");
+		channelName = p.getProperty("ChannelName");
+		
+		} catch (IOException e) {
+		}  
+		
 		
 		if (Boolean.valueOf(ChannelNameRequired) == true && Boolean.valueOf(NewChannelNameRequired) == false
 				&& Boolean.valueOf(ChannelIDRequired) == false) {
@@ -175,44 +188,10 @@ public class getRequest {
 		String Jresponse = response.asString();
 		JSONArray errorArray =JsonPath.read(Jresponse,"$.channels[?(@.name=='"+channelNewName+"')]");
 		jsonPart = errorArray.get(0).toString();
-//		System.out.println("---------------");
-//		System.out.println(errorArray.toString());
-//		System.out.println(errorArray.toJSONString());
-//		List<String> list = new ArrayList<String>();
-//		list.add(errorArray.get(0).toString());
-
-		//		System.out.println(list.size() + "==================");
-//		System.out.println(list.get(0));
-//		System.out.println("Below is the json object===================");
-//		System.out.println(errorArray.get(0).toString());
-//		System.out.println( "==================");
-//		JSONObject jsonObj = new JSONObject(list.get(0));
-//		
-//		System.out.println(jsonObj.toString());
-//		System.out.println(jsonObj.getString("id"));
-//		System.out.println(jsonObj.getString("name"));
-//		System.out.println(jsonObj.getString("creator"));
-//		
-		
-//		List<String> list = new ArrayList<String>();
-//		for(int i = 0; i < errorArray.size(); i++){
-//		    list.add(errorArray.get(i).toString());
-//		}
-//		System.out.println(list);
-		
-//				System.out.println(response.jsonPath().get("channels[?(@.name=='newchanneltest21')]").toString());
-				
-				
-//		int index = valueFinder(response.jsonPath().get("channels.name").toString(),channelNewName);
-//		assertEquals(response.jsonPath().get("channels["+index+"].id").toString().equalsIgnoreCase(channelID), true);
-//		assertEquals(response.jsonPath().get("channels["+index+"].name").toString().equalsIgnoreCase(channelNewName), true);
-//		assertEquals(response.jsonPath().get("channels["+index+"].creator").toString().equalsIgnoreCase(channelCreator), true);
-
 		assertEquals(jsonPart.contains(channelID), true);
 		assertEquals(jsonPart.contains(channelNewName), true);
 		assertEquals(jsonPart.contains(channelCreator), true);
 
-	
 	}
 
 	@Then("Verify the new channel which is been created and check the Archived Status which should be false")
