@@ -1,83 +1,229 @@
 package stepDefinations;
 
+import static org.testng.Assert.assertEquals;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaLoader;
+import org.json.JSONObject;
+import org.testng.Assert;
+import com.jayway.jsonpath.JsonPath;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import net.minidev.json.JSONArray;
 public class getRequest {
+
+	
+	public static String UserToken = "xoxp-1054713556071-1082072627489-1069512983842-ca8129e791c3f3904b2d6612f49253ed";
+	public static String pretty = "1";
+//	public static String channelName = "nice20";
+//	public static String channelNewName = "nice20rename";
+	public static String channelName = System.getProperty("channelName");
+	public static String channelNewName = channelName + "new";
+	public static String baseurl = "https://slack.com";
+	public static String RequestURL = "";
+	public static Response response;
+	public static String channelID = "";
+	public static String channelNameFromResponse = "";
+	public static String channelCreator = "";
+	public static String jsonPart = "";
+	
+	public int valueFinder(String value, String valueToSearch){
+		
+		value = value.replace("[", "");
+		value = value.replace("]", "");
+		value = value.replace(" ", "");
+		List<String> list = new ArrayList<String>(Arrays.asList(value.split(",")));
+		int count = 0;
+		for(String nice : list)
+		{
+				if(nice.trim().equalsIgnoreCase(valueToSearch.trim()))
+				{
+					System.out.println(nice);
+					System.out.println(count);
+					break;
+				}
+				count ++;
+		}
+		return list.size() -3;
+	}
+	
+	
+	@Given("api URL {string}, ChannelNameRequired {string}, NewChannelNameRequired {string}, ChannelIDRequired {string}")
+	public void api_URL_ChannelNameRequired_NewChannelNameRequired_ChannelIDRequired(String URL,
+			String ChannelNameRequired, String NewChannelNameRequired, String ChannelIDRequired) {
+
+		
+		if (Boolean.valueOf(ChannelNameRequired) == true && Boolean.valueOf(NewChannelNameRequired) == false
+				&& Boolean.valueOf(ChannelIDRequired) == false) {
+
+			// create and Join
+			RequestURL = "/api/channels." + URL + "?token=" + UserToken + "&pretty=1" + "&name=" + channelName;
+
+		} else if (Boolean.valueOf(ChannelNameRequired) == false && Boolean.valueOf(NewChannelNameRequired) == true
+				&& Boolean.valueOf(ChannelIDRequired) == true) {
+			
+			// rename
+			RequestURL = "/api/channels." + URL + "?token=" + UserToken + "&pretty=1" + "&name=" + channelNewName
+					+ "&channel=" + channelID ;
+		
+		} else if (Boolean.valueOf(ChannelNameRequired) == false && Boolean.valueOf(NewChannelNameRequired) == false
+				&& Boolean.valueOf(ChannelIDRequired) == true) {
+		
+			// archive
+			RequestURL = "/api/channels." + URL + "?token=" + UserToken + "&pretty=1" + "&channel=" + channelID;
+		
+		} else {
+			
+			//list all
+			RequestURL = "/api/channels." + URL + "?token=" + UserToken + "&pretty=1" ;
+		}
+	}
 
 	@When("User hits the API")
 	public void user_hits_the_API() {
-	}
 
-	@Given("api URL {string} , channel name {string}, and User-Token {string},")
-	public void api_URL_channel_name_and_User_Token(String string, String string2, String string3) {
+		RestAssured.baseURI = baseurl;
+		RequestSpecification request = RestAssured.given();
+		response = request.post(RequestURL);
 
-	}
-
-	@Then("Verify the response received under {int} Second")
-	public void verify_the_response_received_under_Second(Integer int1) {
-
-	}
-
-	@Then("Verify the response is in JSON Format")
-	public void verify_the_response_is_in_JSON_Format() {
-
-	}
-
-	@Then("Verify the response is a valid Json")
-	public void verify_the_response_is_a_valid_Json() {
-
-	}
-
-	@Then("Verify the Schema of the Response")
-	public void verify_the_Schema_of_the_Response() {
-
-	}
-
-	@Then("Verify the property Channel-id, Channel-name, Channel-Creator in the response JSON")
-	public void verify_the_property_Channel_id_Channel_name_Channel_Creator_in_the_response_JSON() {
-
-	}
-
-	@Then("Verify the property Already-In-Channel should be true")
-	public void verify_the_property_Already_In_Channel_should_be_true() {
-
-	}
-
-	@Given("api URL {string} , channel new name {string}, Channel ID {string} and User-Token {string},")
-	public void api_URL_channel_new_name_Channel_ID_and_User_Token(String string, String string2, String string3,
-			String string4) {
-
-	}
-
-	@Then("Verify the property Channel-id, Channel-New-Name, Channel-Creator in the response JSON")
-	public void verify_the_property_Channel_id_Channel_New_Name_Channel_Creator_in_the_response_JSON() {
-
-	}
-
-	@Given("api URL {string} and User-Token {string},")
-	public void api_URL_and_User_Token(String string, String string2) {
-
-	}
-
-	@Then("Verify the channel new name {string} which is been created and check the Archived Status which should be false")
-	public void verify_the_channel_new_name_which_is_been_created_and_check_the_Archived_Status_which_should_be_false(
-			String string) {
-
-	}
-
-	@Given("api URL {string}, Channel-ID {string} and User-Token {string},")
-	public void api_URL_Channel_ID_and_User_Token(String string, String string2, String string3) {
-
+		if (RequestURL.contains("create")) {
+			channelID = response.jsonPath().get("channel.id");
+			channelNameFromResponse = response.jsonPath().get("channel.name");
+			channelCreator = response.jsonPath().get("channel.creator");
+		}
 	}
 
 	@Then("Verify the Success Response Status-Code {int}")
 	public void verify_the_Success_Response_Status_Code(Integer int1) {
+		Assert.assertEquals(response.getStatusCode(), 200, "Verifying the Success response code should be 200");
 	}
 	
+	@Then("Verify the response received under {int} Second")
+	public void verify_the_response_received_under_Second(Integer int1) {
+		Assert.assertEquals(response.getTime() < 5000, true, "Verifying the response time should be less than 5 sec");
+	}
+
+	@Then("Verify the Schema of the Response for {string}")
+	public void verify_the_Schema_of_the_Response_for(String fileName) {
+		FileReader json = null;
+		try{
+			json = new FileReader("src/main/java/resources/"+fileName+".json");
+		}catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		JSONObject rawSchema = new JSONObject(json);
+		Schema schema = SchemaLoader.load(rawSchema);
+		try {
+			schema.validate(response.getBody());
+		} catch (ValidationException exception) {
+			assertEquals(true, false,
+					"Schema Validation Failed while checking is the Response schema is same or Not");
+		}
+		
+	}
+
+	@Then("Verify the property Channel-name in the response JSON")
+	public void verify_the_property_Channel_name_in_the_response_JSON() {
+			assertEquals(channelNameFromResponse.equalsIgnoreCase(channelName), true,"Verify the property Channel-name in the response JSON");
+	}
+
+	@Then("verify the success response of archive")
+	public void verify_the_success_response_of_archive() {
+		boolean flag =Boolean.valueOf(response.jsonPath().get("ok").toString()); 
+		assertEquals(flag, true,"verify the success response of archive");
+	
+	}
+	
+	@Then("Verify the property Already-In-Channel should be true")
+	public void verify_the_property_Already_In_Channel_should_be_true() {
+		boolean flag =Boolean.valueOf(response.jsonPath().get("already_in_channel").toString()); 
+		assertEquals(flag, true,"Verify the property Already-In-Channel should be true");
+
+	}
+
+	@Then("Verify the property Channel-id, Channel-name, Channel-Creator in the response JSON for join")
+	public void verify_the_property_Channel_id_Channel_name_Channel_Creator_in_the_response_JSON_for_join() {
+
+		assertEquals(channelID.equalsIgnoreCase(response.jsonPath().get("channel.id").toString()), true);
+		assertEquals(channelName.equalsIgnoreCase(response.jsonPath().get("channel.name").toString()), true);
+		assertEquals(channelCreator.equalsIgnoreCase(response.jsonPath().get("channel.creator").toString()), true);
+	}
+	
+	@Then("Verify the property Channel-id, Channel-name, Channel-Creator in the response JSON for rename")
+	public void verify_the_property_Channel_id_Channel_name_Channel_Creator_in_the_response_JSON_for_rename() {
+
+		assertEquals(channelID.equalsIgnoreCase(response.jsonPath().get("channel.id").toString()), true);
+		assertEquals(channelNewName.equalsIgnoreCase(response.jsonPath().get("channel.name").toString()), true);
+		assertEquals(channelCreator.equalsIgnoreCase(response.jsonPath().get("channel.creator").toString()), true);
+	}
+	
+		
 	@Then("Verify the property Channel-id, Channel-Name, Channel-Creator in the response JSON")
 	public void verify_the_property_Channel_id_Channel_Name_Channel_Creator_in_the_response_JSON() {
-	 
+		
+		String Jresponse = response.asString();
+		JSONArray errorArray =JsonPath.read(Jresponse,"$.channels[?(@.name=='"+channelNewName+"')]");
+		jsonPart = errorArray.get(0).toString();
+//		System.out.println("---------------");
+//		System.out.println(errorArray.toString());
+//		System.out.println(errorArray.toJSONString());
+//		List<String> list = new ArrayList<String>();
+//		list.add(errorArray.get(0).toString());
+
+		//		System.out.println(list.size() + "==================");
+//		System.out.println(list.get(0));
+//		System.out.println("Below is the json object===================");
+//		System.out.println(errorArray.get(0).toString());
+//		System.out.println( "==================");
+//		JSONObject jsonObj = new JSONObject(list.get(0));
+//		
+//		System.out.println(jsonObj.toString());
+//		System.out.println(jsonObj.getString("id"));
+//		System.out.println(jsonObj.getString("name"));
+//		System.out.println(jsonObj.getString("creator"));
+//		
+		
+//		List<String> list = new ArrayList<String>();
+//		for(int i = 0; i < errorArray.size(); i++){
+//		    list.add(errorArray.get(i).toString());
+//		}
+//		System.out.println(list);
+		
+//				System.out.println(response.jsonPath().get("channels[?(@.name=='newchanneltest21')]").toString());
+				
+				
+//		int index = valueFinder(response.jsonPath().get("channels.name").toString(),channelNewName);
+//		assertEquals(response.jsonPath().get("channels["+index+"].id").toString().equalsIgnoreCase(channelID), true);
+//		assertEquals(response.jsonPath().get("channels["+index+"].name").toString().equalsIgnoreCase(channelNewName), true);
+//		assertEquals(response.jsonPath().get("channels["+index+"].creator").toString().equalsIgnoreCase(channelCreator), true);
+
+		assertEquals(jsonPart.contains(channelID), true);
+		assertEquals(jsonPart.contains(channelNewName), true);
+		assertEquals(jsonPart.contains(channelCreator), true);
+
+	
+	}
+
+	@Then("Verify the new channel which is been created and check the Archived Status which should be false")
+	public void verify_the_new_channel_which_is_been_created_and_check_the_Archived_Status_which_should_be_false() {
+		boolean flag =Boolean.valueOf(jsonPart.substring(jsonPart.indexOf("is_archived")+12,jsonPart.indexOf("is_general")-2)); 
+		assertEquals(flag, false,"Verify the new channel which is been created and check the Archived Status which should be false");
+		
+	}
+	@Then("Verify the new channel which is been created and check the Archived Status which should be true")
+	public void verify_the_new_channel_which_is_been_created_and_check_the_Archived_Status_which_should_be_true() {
+		boolean flag =Boolean.valueOf(jsonPart.substring(jsonPart.indexOf("is_archived")+12,jsonPart.indexOf("is_general")-2)); 
+		assertEquals(flag, true,"Verify the new channel which is been created and check the Archived Status which should be false");
 	}
 }
