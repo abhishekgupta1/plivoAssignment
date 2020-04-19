@@ -3,6 +3,7 @@
 Steps to Run the File 
 --------------------
 1.Extract the Folder and search for base.properties
+
 2.Add Slack Token in front of UserToken and ChannelName of your choice
 
 Now you can Run the Project with
